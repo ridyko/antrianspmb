@@ -1,0 +1,95 @@
+:root {
+    /* Color Tokens (Jakarta PPDB theme: Navy Blue, Green, Yellow) */
+    --primary-blue: #0f172a;
+    --navy-dki: #002d62;
+    --green-dki: #00875a;
+    --green-bright: #00a86b;
+    --accent-yellow: #fbc02d;
+    --accent-yellow-light: #fff59d;
+    
+    /* Background Gradient (Modern Mesh Gradient) */
+    --bg-mesh: radial-gradient(at 0% 0%, #e8f5e9 0px, transparent 50%), 
+               radial-gradient(at 100% 0%, #e3f2fd 0px, transparent 50%), 
+               radial-gradient(at 50% 100%, #c8e6c9 0px, transparent 50%), 
+               #f1f5f9;
+
+    /* Glassmorphism Details */
+    --glass-bg: rgba(255, 255, 255, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.5);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+    
+    /* Typography & Spacing */
+    --font-outfit: 'Outfit', sans-serif;
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Base Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-outfit);
+    background: var(--bg-mesh);
+    color: var(--primary-blue);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Glassmorphism Utilities */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 16px;
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--navy-dki);
+    border-radius: 4px;
+    opacity: 0.8;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-blue);
+}
+
+/* Responsive Grid Helper */
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Dynamic Call Blinking animation */
+@keyframes pulseCall {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 168, 107, 0.7);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 0 20px rgba(0, 168, 107, 0);
+        transform: scale(1.02);
+        background-color: #e8f5e9;
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 168, 107, 0);
+        transform: scale(1);
+    }
+}
+
+.calling-flash {
+    animation: pulseCall 1.2s infinite ease-in-out;
+}
