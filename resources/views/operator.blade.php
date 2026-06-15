@@ -351,7 +351,7 @@
 <div class="navbar">
     <div class="nav-brand">
         @if(!empty($settings['header_logo']))
-            <img src="{{ asset($settings['header_logo']) }}" style="height: 40px; width: auto; object-fit: contain; border-radius: 4px;">
+            <img src="{{ asset($settings['header_logo']) }}?v={{ filemtime(public_path($settings['header_logo'])) }}" style="height: 40px; width: auto; object-fit: contain; border-radius: 4px;" alt="Logo">
         @else
             <!-- Minimalist DKI SVG -->
             <svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">

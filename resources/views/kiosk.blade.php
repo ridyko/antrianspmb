@@ -276,7 +276,7 @@
 <!-- Header -->
 <div class="kiosk-header">
     @if(!empty($settings['header_logo']))
-        <img src="{{ asset($settings['header_logo']) }}" style="height: 70px; width: auto; object-fit: contain; border-radius: 6px; margin-bottom: 10px;">
+        <img src="{{ asset($settings['header_logo']) }}?v={{ filemtime(public_path($settings['header_logo'])) }}" style="height: 70px; width: auto; object-fit: contain; border-radius: 6px; margin-bottom: 10px;" alt="Logo">
     @else
         <!-- Inline DKI SVG -->
         <svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
@@ -290,7 +290,7 @@
         </svg>
     @endif
     <h1>KIOS AMBIL TIKET ANTREAN</h1>
-    <h2>{{ $settings['header_title'] ?? 'POSKO PPDB / SPMB' }} - WILAYAH 1</h2>
+    <h2>{{ $settings['header_title'] ?? 'POSKO PPDB / SPMB' }}{{ !empty($settings['header_subtitle']) ? ' - ' . $settings['header_subtitle'] : '' }}</h2>
 </div>
 
 <!-- Touch Button Area -->

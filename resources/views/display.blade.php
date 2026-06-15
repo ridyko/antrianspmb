@@ -424,7 +424,7 @@
     <div class="header-left">
         <div class="logo-container">
             @if(!empty($settings['header_logo']))
-                <img src="{{ asset($settings['header_logo']) }}" style="height: 80px; width: auto; max-width: 300px; object-fit: contain; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.15)); border-radius: 6px;">
+                <img src="{{ asset($settings['header_logo']) }}?v={{ filemtime(public_path($settings['header_logo'])) }}" style="height: 80px; width: auto; max-width: 300px; object-fit: contain; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.15)); border-radius: 6px;" alt="Logo">
             @else
                 <!-- Custom DKI Jakarta Logo SVG -->
                 <svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
