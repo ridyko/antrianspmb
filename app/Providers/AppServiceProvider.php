@@ -14,11 +14,12 @@ class AppServiceProvider extends ServiceProvider
         //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        //
+        if (config('app.env') === 'production') {
+            \URL::forceScheme('https');
+            $this->app['request']->server->set('SCRIPT_NAME', '/index.php');
+            $this->app['request']->server->set('SCRIPT_FILENAME', '/index.php');
+        }
     }
 }
