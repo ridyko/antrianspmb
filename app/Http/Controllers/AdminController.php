@@ -131,7 +131,7 @@ class AdminController extends Controller
     public function uploadSlideshowImage(Request $request)
     {
         $request->validate([
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:15360',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:15360',
         ]);
 
         $setting = Setting::firstOrCreate(['key' => 'slideshow_images'], ['value' => '[]']);
