@@ -20,16 +20,19 @@ class AdminController extends Controller
     public function updateSettings(Request $request)
     {
         $data = $request->validate([
-            'header_title' => 'required|string|max:255',
-            'header_subtitle' => 'required|string|max:255',
-            'header_address' => 'required|string|max:255',
-            'marquee_text' => 'required|string',
-            'static_text' => 'nullable|string',
-            'media_type' => 'required|in:video,slideshow',
-            'video_url' => 'nullable|string',
-            'speech_rate' => 'required|numeric|min:0.5|max:2.0',
-            'speech_pitch' => 'required|numeric|min:0.5|max:2.0',
-            'header_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:15360',
+            'header_title'       => 'required|string|max:255',
+            'header_subtitle'    => 'required|string|max:255',
+            'header_address'     => 'required|string|max:255',
+            'marquee_text'       => 'required|string',
+            'static_text'        => 'nullable|string',
+            'media_type'         => 'required|in:video,slideshow',
+            'video_url'          => 'nullable|string',
+            'speech_rate'        => 'required|numeric|min:0.5|max:2.0',
+            'speech_pitch'       => 'required|numeric|min:0.5|max:2.0',
+            // logo can come as file (local XAMPP) OR base64 JSON string (hosting)
+            'header_logo'        => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:15360',
+            'header_logo_base64' => 'nullable|string',
+            'logo_filename'      => 'nullable|string',
         ]);
 
         // Handle logo deletion
@@ -41,31 +44,62 @@ class AdminController extends Controller
             Setting::updateOrCreate(['key' => 'header_logo'], ['value' => null]);
         }
 
-        // Handle logo upload
-        if ($request->hasFile('header_logo')) {
-            $file = $request->file('header_logo');
+        // Handle logo upload via base64 JSON (shared hosting – bypasses upload_max_filesize)
+        if ($request->filled('header_logo_base64')) {
+            $base64String = $request->header_logo_base64;
+            if (preg_match('/^data:image\/(\w+);base64,(.+)$/', $base64String, $matches)) {
+                $extension   = strtolower($matches[1]);
+                $imageData   = base64_decode($matches[2]);
+                $allowedExt  = ['jpeg', 'jpg', 'png', 'gif', 'webp', 'svg'];
+
+                if (in_array($extension, $allowedExt)) {
+                    $filename        = 'logo_' . time() . '.' . $extension;
+                    $destinationPath = public_path('uploads/logo');
+
+                    if (!file_exists($destinationPath)) {
+                        mkdir($destinationPath, 0777, true);
+                    }
+
+                    file_put_contents($destinationPath . '/' . $filename, $imageData);
+                    $relativePath = 'uploads/logo/' . $filename;
+
+                    // Delete old logo file
+                    $oldLogo = Setting::where('key', 'header_logo')->value('value');
+                    if ($oldLogo && file_exists(public_path($oldLogo))) {
+                        @unlink(public_path($oldLogo));
+                    }
+
+                    Setting::updateOrCreate(['key' => 'header_logo'], ['value' => $relativePath]);
+                }
+            }
+        }
+        // Handle logo upload via classic file (local XAMPP dev)
+        elseif ($request->hasFile('header_logo')) {
+            $file     = $request->file('header_logo');
             $filename = 'logo_' . time() . '.' . $file->getClientOriginalExtension();
             $destinationPath = public_path('uploads/logo');
-            
+
             if (!file_exists($destinationPath)) {
                 mkdir($destinationPath, 0777, true);
             }
-            
+
             $file->move($destinationPath, $filename);
             $relativePath = 'uploads/logo/' . $filename;
-            
-            // Delete old file if it exists
+
             $oldLogo = Setting::where('key', 'header_logo')->value('value');
             if ($oldLogo && file_exists(public_path($oldLogo))) {
                 @unlink(public_path($oldLogo));
             }
-            
+
             Setting::updateOrCreate(['key' => 'header_logo'], ['value' => $relativePath]);
         }
 
-        foreach ($data as $key => $value) {
-            if ($key !== 'header_logo') {
-                Setting::updateOrCreate(['key' => $key], ['value' => $value]);
+        // Persist all other text/numeric settings
+        $saveKeys = ['header_title','header_subtitle','header_address','marquee_text',
+                     'static_text','media_type','video_url','speech_rate','speech_pitch'];
+        foreach ($saveKeys as $key) {
+            if (array_key_exists($key, $data)) {
+                Setting::updateOrCreate(['key' => $key], ['value' => $data[$key]]);
             }
         }
 
@@ -74,6 +108,7 @@ class AdminController extends Controller
             'message' => 'Pengaturan berhasil diperbarui.',
         ]);
     }
+
 
     public function storeCounter(Request $request)
     {

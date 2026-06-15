@@ -576,11 +576,14 @@
     const deleteLogoInput = document.getElementById('delete_logo');
     const btnDeleteLogo = document.getElementById('btnDeleteLogo');
 
+    // Store base64 logo when user selects a file
+    let logoBase64 = null;
     if (logoInput) {
         logoInput.addEventListener('change', () => {
             if (logoInput.files && logoInput.files[0]) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
+                    logoBase64 = e.target.result; // save base64 for JSON submission
                     if (logoPreview) {
                         logoPreview.src = e.target.result;
                         logoPreview.style.display = 'block';
@@ -649,31 +652,43 @@
                 }
             }
 
+            // Build JSON payload (bypasses PHP upload_max_filesize for logo)
             const formData = new FormData(settingsForm);
+            const jsonData = {};
+            formData.forEach((value, key) => {
+                if (key !== 'header_logo') jsonData[key] = value; // skip file field
+            });
+            // Attach logo as base64 if user selected a new file
+            if (logoBase64) {
+                jsonData.header_logo_base64 = logoBase64;
+                jsonData.logo_filename = logoInput.files[0] ? logoInput.files[0].name : 'logo.jpg';
+            }
 
             try {
                 const response = await fetch('{{ route("admin.update-settings") }}', {
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Content-Type': 'application/json'
                     },
-                    body: formData
+                    body: JSON.stringify(jsonData)
                 });
                 const res = await response.json();
                 if (res.success) {
+                    logoBase64 = null; // reset after save
                     Swal.fire({
                         icon: 'success',
                         title: 'Berhasil',
                         text: res.message,
                         confirmButtonColor: '#00875a'
                     }).then(() => {
-                        location.reload(); // Reload to refresh headers & logo preview status
+                        location.reload();
                     });
                 } else {
                     Swal.fire({
                         icon: 'error',
                         title: 'Gagal',
-                        text: 'Gagal memperbarui pengaturan.',
+                        text: res.message || 'Gagal memperbarui pengaturan.',
                         confirmButtonColor: '#00875a'
                     });
                 }
