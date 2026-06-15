@@ -130,8 +130,10 @@ class AdminController extends Controller
 
     public function uploadSlideshowImage(Request $request)
     {
+        // Accept base64 encoded image (to bypass PHP upload_max_filesize limit on shared hosting)
         $request->validate([
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:15360',
+            'image_base64' => 'required|string',
+            'filename'     => 'required|string',
         ]);
 
         $setting = Setting::firstOrCreate(['key' => 'slideshow_images'], ['value' => '[]']);
@@ -144,34 +146,47 @@ class AdminController extends Controller
             ]);
         }
 
-        if ($request->hasFile('image')) {
-            $file = $request->file('image');
-            $filename = 'slide_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            
+        try {
+            // Parse base64 data: "data:image/jpeg;base64,<data>"
+            $base64String = $request->image_base64;
+            if (!preg_match('/^data:image\/(\w+);base64,(.+)$/', $base64String, $matches)) {
+                return response()->json(['success' => false, 'message' => 'Format gambar tidak valid.']);
+            }
+
+            $extension  = strtolower($matches[1]);
+            $imageData  = base64_decode($matches[2]);
+
+            // Validate extension
+            $allowedExt = ['jpeg', 'jpg', 'png', 'gif', 'webp', 'svg'];
+            if (!in_array($extension, $allowedExt)) {
+                return response()->json(['success' => false, 'message' => 'Tipe berkas tidak diizinkan.']);
+            }
+
+            $filename = 'slide_' . time() . '_' . uniqid() . '.' . $extension;
             $destinationPath = public_path('uploads/slideshow');
+
             if (!file_exists($destinationPath)) {
                 mkdir($destinationPath, 0777, true);
             }
-            
-            $file->move($destinationPath, $filename);
+
+            file_put_contents($destinationPath . '/' . $filename, $imageData);
             $relativePath = 'uploads/slideshow/' . $filename;
-            
+
             $images[] = $relativePath;
-            
             $setting->value = json_encode($images);
             $setting->save();
 
             return response()->json([
                 'success' => true,
-                'images' => $images,
+                'images'  => $images,
                 'message' => 'Gambar berhasil diunggah.',
             ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memproses gambar: ' . $e->getMessage(),
+            ]);
         }
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Tidak ada berkas yang diunggah.',
-        ]);
     }
 
     public function deleteSlideshowImage(Request $request)

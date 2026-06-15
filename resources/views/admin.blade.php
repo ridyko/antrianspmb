@@ -845,62 +845,75 @@
     // AJAX Slideshow Upload
     const fileInput = document.getElementById('slideshow_file_input');
     if (fileInput) {
-        fileInput.addEventListener('change', async () => {
+        fileInput.addEventListener('change', () => {
             if (fileInput.files.length === 0) return;
-            
+
             const file = fileInput.files[0];
-            const formData = new FormData();
-            formData.append('image', file);
-            
             const trigger = document.getElementById('uploadTrigger');
+
             if (trigger) {
                 trigger.style.opacity = '0.5';
                 trigger.style.pointerEvents = 'none';
             }
 
-            try {
-                const response = await fetch('{{ route("admin.slideshow.upload") }}', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: formData
-                });
-                const res = await response.json();
-                if (res.success) {
-                    renderSlideshowGallery(res.images);
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil',
-                        text: 'Gambar berhasil diunggah.',
-                        timer: 1500,
-                        showConfirmButton: false
+            // Use FileReader to encode as base64 (bypasses PHP upload_max_filesize on hosting)
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                try {
+                    const response = await fetch('{{ route("admin.slideshow.upload") }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            image_base64: reader.result,
+                            filename: file.name
+                        })
                     });
-                } else {
+                    const res = await response.json();
+                    if (res.success) {
+                        renderSlideshowGallery(res.images);
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: 'Gambar berhasil diunggah.',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: res.message || 'Gagal mengunggah gambar.',
+                            confirmButtonColor: '#00875a'
+                        });
+                    }
+                } catch (err) {
+                    console.error(err);
                     Swal.fire({
                         icon: 'error',
-                        title: 'Gagal',
-                        text: res.message || 'Gagal mengunggah gambar.',
+                        title: 'Kesalahan',
+                        text: 'Gagal menyambung ke server.',
                         confirmButtonColor: '#00875a'
                     });
+                } finally {
+                    fileInput.value = '';
+                    if (trigger) {
+                        trigger.style.opacity = '1';
+                        trigger.style.pointerEvents = 'auto';
+                    }
                 }
-            } catch (err) {
-                console.error(err);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Kesalahan',
-                    text: 'Gagal menyambung ke server.',
-                    confirmButtonColor: '#00875a'
-                });
-            } finally {
-                fileInput.value = ''; 
-                if (trigger) {
-                    trigger.style.opacity = '1';
-                    trigger.style.pointerEvents = 'auto';
-                }
-            }
+            };
+            reader.onerror = () => {
+                Swal.fire({ icon: 'error', title: 'Kesalahan', text: 'Gagal membaca berkas gambar.' });
+                fileInput.value = '';
+                if (trigger) { trigger.style.opacity = '1'; trigger.style.pointerEvents = 'auto'; }
+            };
         });
     }
+
 
     // AJAX Slideshow Delete
     function deleteSlide(imageUrl) {
