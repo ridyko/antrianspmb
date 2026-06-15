@@ -312,7 +312,7 @@
 
 <!-- Footer -->
 <div class="kiosk-footer">
-    Suku Dinas Pendidikan Wilayah 1 Kota Administrasi Jakarta Pusat &copy; {{ date('Y') }}
+    questkomapp.com &copy; {{ date('Y') }}
 </div>
 
 <!-- Print Preview Modal -->
